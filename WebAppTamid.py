@@ -9,14 +9,18 @@ import requests
 import tornado.ioloop
 import tornado.web
 
+WEATHER_API_KEY = "119f4ed0b5ca20d098497b54a430a6c3"
+
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('mainPage.html')
     def post(self):
         self.set_header("Content-Type", "text/plain")
         self.write("You wrote " + self.get_body_argument("weather_city"))
-        print(self.get_body_argument("weather_city"))
-
+        message = self.get_body_argument("weather_city")
+        r = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + message + "&appid=" + WEATHER_API_KEY) 
+        data = r.json()
+        print(data)
 
 
 def make_app():
