@@ -14,29 +14,39 @@ from pprint import pprint
 
 WEATHER_API_KEY = "119f4ed0b5ca20d098497b54a430a6c3"
 
-config={
-  "user_key":"109136773c4244bb66745f4db5d67320"
-  }
+ZOMATO_API_KEY = "109136773c4244bb66745f4db5d67320"
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('mainPage.html')
     def post(self):
-        #self.write("You wrote " + self.get_body_argument("weather_city"))
-        self.render('weatherPage.html')
+        #self.render('weatherPage.html')
+        message = self.get_body_argument("weather_city")
+        temp,lat,lon = self.queryWeatherData(message)
+        print("temp in " + message + "is", temp)
+        self.queryRestaurantData(lat, lon, message)
+    def queryWeatherData(self, cityName):
+    	r = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + WEATHER_API_KEY) 
+    	data = r.json()
+    	tempInFar = self.k2f(data['main']['temp'])
+    	latitude = data['coord']['lat']
+    	longitude = data['coord']['lon']
+    	return tempInFar, latitude, longitude
+    def queryRestaurantData(self, lat, lon, city):
+    	locationUrlFromLatLong = "https://developers.zomato.com/api/v2.1/locations?query=" + city + "&lat=" + str(lat) + "&lon=" + str(lon)
+    	header = {"User-agent": "curl/7.43.0", "Accept": "application/json", "user_key": ZOMATO_API_KEY}
+    	response = requests.get(locationUrlFromLatLong, headers=header)
+    	restData = response.json()
+    	entity_type = restData['location_suggestions'][0]['entity_type']
+    	city_id = restData['location_suggestions'][0]['city_id']
+    	print("restaurant info:", entity_type, city_id)
+    
+    def k2f(self, k):
+    	c = k - 273
+    	f = ((9 * c) / 5) + 32
+    	return f
 
-        # message = self.get_body_argument("weather_city")
-        # r = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + message + "&appid=" + WEATHER_API_KEY) 
-        # data = r.json()
-        # temp = data['main']['temp']
-        # c = temp - 273
-        # f = ((9 * c) / 5) + 32
-        # print("temp", f)
-        # locationUrlFromLatLong = "https://developers.zomato.com/api/v2.1/geocode?lat=40.74&lon=-74.17"
-        # header = {"User-agent": "curl/7.43.0", "Accept": "application/json", "user_key": "109136773c4244bb66745f4db5d67320"}
-        # response = requests.get(locationUrlFromLatLong, headers=header)
-       # print("json response for Zomato:")
-       # pprint(response.json())
+
 
 def make_app():
     return tornado.web.Application([
