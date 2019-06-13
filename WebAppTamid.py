@@ -8,6 +8,7 @@ Created on Mon Jun  3 23:54:00 2019
 import requests
 import tornado.ioloop
 import tornado.web
+from tornado import template
 import requests
 from pprint import pprint
 
@@ -28,14 +29,15 @@ class MainHandler(tornado.web.RequestHandler):
     def post(self):
         #self.render('weatherPage.html')
         message = self.get_body_argument("weather_city")
-        temp,lat,lon = self.queryWeatherData(message)
-        print("temp in " + message + "is", float(temp))
+        temperature,lat,lon = self.queryWeatherData(message)
+        print("temp in " + message + "is", float(temperature))
         self.queryRestaurantData(lat, lon, message)
-        self.write('<div align="center" style="padding-top: 22%"><textarea rows="4"'
-                       ' cols="30" style="background:transparent;">weather: ' + str(temp)
-                       + '\nLocation: '+message+'\nlatitude:' + str(lat)
-                       + '</textarea><br><input type="button" value="New Submission" '
-                         'style="background: transparent;" onClick="window.location.reload()"></div>')
+        # self.write('<div align="center" style="padding-top: 22%"><textarea rows="4"'
+        #                ' cols="30" style="background:transparent;">weather: ' + str(temp)
+        #                + '\nLocation: '+message+'\nlatitude:' + str(lat)
+        #                + '</textarea><br><input type="button" value="New Submission" '
+        #                  'style="background: transparent;" onClick="window.location.reload()"></div>')
+        self.render("templateTest.html", temp = temperature)
     def queryWeatherData(self, cityName):
     	r = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + WEATHER_API_KEY) 
     	data = r.json()
