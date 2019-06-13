@@ -28,6 +28,7 @@ class MainHandler(tornado.web.RequestHandler):
     def queryWeatherData(self, cityName):
     	r = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + WEATHER_API_KEY) 
     	data = r.json()
+    	pprint(data)
     	tempInFar = self.k2f(data['main']['temp'])
     	latitude = data['coord']['lat']
     	longitude = data['coord']['lon']
