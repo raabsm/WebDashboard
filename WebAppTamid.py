@@ -45,6 +45,8 @@ class MainHandler(tornado.web.RequestHandler):
     	restData = response.json()
     	numRestaurants = len(restData['best_rated_restaurant'])
     	print("numRestaurants", numRestaurants)
+    	for num in range(0,numRestaurants):
+    		print(restData['best_rated_restaurant'][num]['restaurant']['name'])
 
 
     def k2f(self, k):
