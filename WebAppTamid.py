@@ -16,6 +16,12 @@ WEATHER_API_KEY = "119f4ed0b5ca20d098497b54a430a6c3"
 
 ZOMATO_API_KEY = "109136773c4244bb66745f4db5d67320"
 
+def k2f(k):
+	c = k - 273
+	f = ((9 * c) / 5) + 32
+	return f
+
+
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('mainPage.html')
@@ -23,13 +29,19 @@ class MainHandler(tornado.web.RequestHandler):
         #self.render('weatherPage.html')
         message = self.get_body_argument("weather_city")
         temp,lat,lon = self.queryWeatherData(message)
-        print("temp in " + message + "is", temp)
+        print("temp in " + message + "is", float(temp))
         self.queryRestaurantData(lat, lon, message)
+        self.write('<div align="center" style="padding-top: 22%"><textarea rows="4"'
+                       ' cols="30" style="background:transparent;">weather: ' + str(temp)
+                       + '\nLocation: '+message+'\nlatitude:' + str(lat)
+                       + '</textarea><br><input type="button" value="New Submission" '
+                         'style="background: transparent;" onClick="window.location.reload()"></div>')
     def queryWeatherData(self, cityName):
     	r = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + WEATHER_API_KEY) 
     	data = r.json()
     	pprint(data)
-    	tempInFar = self.k2f(data['main']['temp'])
+    	weather_data = data['main']
+    	humidity, pressure, tempInFar, temp_max, temp_min = weather_data['humidity'], weather_data['pressure'],k2f(weather_data['temp']),k2f(weather_data['temp_max']),k2f(weather_data['temp_min']) 
     	latitude = data['coord']['lat']
     	longitude = data['coord']['lon']
     	return tempInFar, latitude, longitude
@@ -49,11 +61,6 @@ class MainHandler(tornado.web.RequestHandler):
     	for num in range(0,numRestaurants):
     		print(restData['best_rated_restaurant'][num]['restaurant']['name'], restData['best_rated_restaurant'][num]['restaurant']['location']['address'])
 
-
-    def k2f(self, k):
-    	c = k - 273
-    	f = ((9 * c) / 5) + 32
-    	return f
 
 
 
