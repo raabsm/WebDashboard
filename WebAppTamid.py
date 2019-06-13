@@ -40,7 +40,13 @@ class MainHandler(tornado.web.RequestHandler):
     	entity_type = restData['location_suggestions'][0]['entity_type']
     	city_id = restData['location_suggestions'][0]['city_id']
     	print("restaurant info:", entity_type, city_id)
-    
+    	restaurantURL = "https://developers.zomato.com/api/v2.1/location_details?entity_id=" + str(city_id)+ "&entity_type=" + entity_type 
+    	response = requests.get(restaurantURL, headers=header)
+    	restData = response.json()
+    	numRestaurants = len(restData['best_rated_restaurant'])
+    	print("numRestaurants", numRestaurants)
+
+
     def k2f(self, k):
     	c = k - 273
     	f = ((9 * c) / 5) + 32
