@@ -29,24 +29,19 @@ class MainHandler(tornado.web.RequestHandler):
     def post(self):
         #self.render('weatherPage.html')
         message = self.get_body_argument("weather_city")
-        temperature,lat,lon = self.queryWeatherData(message)
-        print("temp in " + message + "is", float(temperature))
-        self.queryRestaurantData(lat, lon, message)
-        # self.write('<div align="center" style="padding-top: 22%"><textarea rows="4"'
-        #                ' cols="30" style="background:transparent;">weather: ' + str(temp)
-        #                + '\nLocation: '+message+'\nlatitude:' + str(lat)
-        #                + '</textarea><br><input type="button" value="New Submission" '
-        #                  'style="background: transparent;" onClick="window.location.reload()"></div>')
-        self.render("templateTest.html", temp = temperature)
+        weather_city_id, tempInFar, temp_max, temp_min, humidity, pressure, latitude, longitude = self.queryWeatherData(message)
+        self.queryRestaurantData(latitude, longitude, message)
+        self.render("weatherPage.html", city_name = message, cur_temp = tempInFar, max_temp = temp_max, min_temp = temp_min, pressure = pressure, humidity = humidity, weather_city_id = weather_city_id)
     def queryWeatherData(self, cityName):
     	r = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + WEATHER_API_KEY) 
     	data = r.json()
     	pprint(data)
     	weather_data = data['main']
+    	weather_city_id = data['id']
     	humidity, pressure, tempInFar, temp_max, temp_min = weather_data['humidity'], weather_data['pressure'],k2f(weather_data['temp']),k2f(weather_data['temp_max']),k2f(weather_data['temp_min']) 
     	latitude = data['coord']['lat']
     	longitude = data['coord']['lon']
-    	return tempInFar, latitude, longitude
+    	return weather_city_id, tempInFar, temp_max, temp_min, humidity, pressure, latitude, longitude
     def queryRestaurantData(self, lat, lon, city):
     	locationUrlFromLatLong = "https://developers.zomato.com/api/v2.1/locations?query=" + city + "&lat=" + str(lat) + "&lon=" + str(lon)
     	header = {"User-agent": "curl/7.43.0", "Accept": "application/json", "user_key": ZOMATO_API_KEY}
