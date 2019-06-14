@@ -30,8 +30,8 @@ class MainHandler(tornado.web.RequestHandler):
         #self.render('weatherPage.html')
         message = self.get_body_argument("weather_city")
         weather_city_id, tempInFar, temp_max, temp_min, humidity, pressure, latitude, longitude = self.queryWeatherData(message)
-        self.queryRestaurantData(latitude, longitude, message)
-        self.render("weatherPage.html", city_name = message, cur_temp = tempInFar, max_temp = temp_max, min_temp = temp_min, pressure = pressure, humidity = humidity, weather_city_id = weather_city_id)
+        restList = self.queryRestaurantData(latitude, longitude, message)
+        self.render("weatherPage.html", city_name = message, cur_temp = tempInFar, max_temp = temp_max, min_temp = temp_min, pressure = pressure, humidity = humidity, weather_city_id = weather_city_id, items = restList)
     def queryWeatherData(self, cityName):
     	r = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + WEATHER_API_KEY) 
     	data = r.json()
@@ -49,14 +49,14 @@ class MainHandler(tornado.web.RequestHandler):
     	restData = response.json()
     	entity_type = restData['location_suggestions'][0]['entity_type']
     	city_id = restData['location_suggestions'][0]['city_id']
-    	print("restaurant info:", entity_type, city_id)
     	restaurantURL = "https://developers.zomato.com/api/v2.1/location_details?entity_id=" + str(city_id)+ "&entity_type=" + entity_type 
     	response = requests.get(restaurantURL, headers=header)
     	restData = response.json()
     	numRestaurants = len(restData['best_rated_restaurant'])
-    	print("numRestaurants", numRestaurants)
+    	listOfRest = []
     	for num in range(0,numRestaurants):
-    		print(restData['best_rated_restaurant'][num]['restaurant']['name'], restData['best_rated_restaurant'][num]['restaurant']['location']['address'])
+    		listOfRest.append(restData['best_rated_restaurant'][num]['restaurant']['name'] + "--- location: " + restData['best_rated_restaurant'][num]['restaurant']['location']['address'])
+    	return listOfRest
 
 
 
