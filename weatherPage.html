@@ -4,6 +4,8 @@
 		<title>{{ city_name }}</title>
 	</head>
 	<h1>OPENWEATHERMAP API</h1>
+	<h4>API Response Time: {{weather_response_time}}</h4>
+	<h4>API Request Time: {{weather_request_time}}</h4>
 	<p>Current Temperature: {{cur_temp}}
 	<br>Max Temperature: {{max_temp}}
 	<br>Min Temperature: {{min_temp}}
@@ -15,6 +17,8 @@
 	
 	<h1>Restaurant (ZOMATO) API</h1>
 	<h2>Best Rated Restaurants in {{city_name}}</h2>
+	<h4>API Response Time: {{rest_response_time}}</h4>
+	<h4>API Request Time: {{rest_request_time}}</h4>
 	<p>{% for item in items %}
 		<li>{{ item }}</li>
 		{% end %}
