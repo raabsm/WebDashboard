@@ -18,6 +18,8 @@ WEATHER_API_KEY = "119f4ed0b5ca20d098497b54a430a6c3"
 
 ZOMATO_API_KEY = "109136773c4244bb66745f4db5d67320"
 
+AVIATION_API_KEY = "b918d5-5ab06e" #only has 90 calls remaining!!!
+
 def k2f(k):
 	c = k - 273
 	f = ((9 * c) / 5) + 32
@@ -32,12 +34,14 @@ class MainHandler(tornado.web.RequestHandler):
         message = self.get_body_argument("weather_city")
         weather_response_time, weather_request_time, weather_city_id, tempInFar, temp_max, temp_min, humidity, pressure, latitude, longitude = self.queryWeatherData(message)
         rest_response_time, rest_request_time, restList = self.queryRestaurantData(latitude, longitude, message)
+        airport_response_time, airport_request_time,list_of_airports = self.queryNearbyAirports(latitude,longitude)
         self.render("weatherPage.html", 
 			city_name = message, 
         	weather_response_time = weather_response_time, weather_request_time = weather_request_time, 
         	rest_response_time = rest_response_time, rest_request_time = rest_request_time, 
         	cur_temp = tempInFar, max_temp = temp_max, min_temp = temp_min, pressure = pressure, humidity = humidity, weather_city_id = weather_city_id, 
-        	items = restList)
+        	items = restList,
+        	airport_response_time = airport_response_time, airport_request_time = airport_request_time, listOfAirports = list_of_airports)
     def queryWeatherData(self, cityName):
     	start = time.time()
     	r = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + WEATHER_API_KEY) 
@@ -68,7 +72,17 @@ class MainHandler(tornado.web.RequestHandler):
     	for num in range(0,numRestaurants):
     		listOfRest.append(restData['best_rated_restaurant'][num]['restaurant']['name'] + "--- location: " + restData['best_rated_restaurant'][num]['restaurant']['location']['address'])
     	return end-start, timeOfRequest, listOfRest
-
+    def queryNearbyAirports(self, lat, lon):
+    	URL = "http://aviation-edge.com/v2/public/nearby?key=" + AVIATION_API_KEY + "&lat=" + str(lat) + "&lng=" + str(lon) + "&distance=50"
+    	start = time.time()
+    	response = requests.get(URL)
+    	end = time.time()
+    	timeOfRequest = response.headers['Date']
+    	airportData = response.json()
+    	listOfAirports = []
+    	for airport in airportData:
+    		listOfAirports.append("Name of airport: " + airport['nameAirport'] + " Code: " + airport['codeIataAirport'] + " City: " + airport['codeIataCity'])
+    	return end-start, timeOfRequest, listOfAirports
 
 
 
