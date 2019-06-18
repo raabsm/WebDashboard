@@ -30,18 +30,22 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('mainPage.html')
     def post(self):
-        #self.render('weatherPage.html')
         message = self.get_body_argument("weather_city")
-        weather_response_time, weather_request_time, weather_city_id, tempInFar, temp_max, temp_min, humidity, pressure, latitude, longitude = self.queryWeatherData(message)
-        rest_response_time, rest_request_time, restList = self.queryRestaurantData(latitude, longitude, message)
-        airport_response_time, airport_request_time,list_of_airports = self.queryNearbyAirports(latitude,longitude)
-        self.render("weatherPage.html", 
-			city_name = message, 
-        	weather_response_time = weather_response_time, weather_request_time = weather_request_time, 
-        	rest_response_time = rest_response_time, rest_request_time = rest_request_time, 
-        	cur_temp = tempInFar, max_temp = temp_max, min_temp = temp_min, pressure = pressure, humidity = humidity, weather_city_id = weather_city_id, 
-        	items = restList,
-        	airport_response_time = airport_response_time, airport_request_time = airport_request_time, listOfAirports = list_of_airports)
+        try:
+	        weather_response_time, weather_request_time, weather_city_id, tempInFar, temp_max, temp_min, humidity, pressure, latitude, longitude = self.queryWeatherData(message)
+	        rest_response_time, rest_request_time, restList = self.queryRestaurantData(latitude, longitude, message)
+	        airport_response_time, airport_request_time,list_of_airports = self.queryNearbyAirports(latitude,longitude)
+	        self.render("weatherPage.html", 
+				city_name = message, 
+	        	weather_response_time = weather_response_time, weather_request_time = weather_request_time, 
+	        	rest_response_time = rest_response_time, rest_request_time = rest_request_time, 
+	        	cur_temp = tempInFar, max_temp = temp_max, min_temp = temp_min, pressure = pressure, humidity = humidity, weather_city_id = weather_city_id, 
+	        	items = restList,
+	        	airport_response_time = airport_response_time, airport_request_time = airport_request_time, listOfAirports = list_of_airports)
+        except:
+            self.write('\"' + message + '\" is not a valid City.  Please Reload the page and try again')
+
+      
     def queryWeatherData(self, cityName):
     	start = time.time()
     	r = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + WEATHER_API_KEY) 
@@ -54,6 +58,7 @@ class MainHandler(tornado.web.RequestHandler):
     	latitude = data['coord']['lat']
     	longitude = data['coord']['lon']
     	return end-start, timeOfRequest, weather_city_id, tempInFar, temp_max, temp_min, humidity, pressure, latitude, longitude
+
     def queryRestaurantData(self, lat, lon, city):
     	locationUrlFromLatLong = "https://developers.zomato.com/api/v2.1/locations?query=" + city + "&lat=" + str(lat) + "&lon=" + str(lon)
     	header = {"User-agent": "curl/7.43.0", "Accept": "application/json", "user_key": ZOMATO_API_KEY}
@@ -72,6 +77,7 @@ class MainHandler(tornado.web.RequestHandler):
     	for num in range(0,numRestaurants):
     		listOfRest.append(restData['best_rated_restaurant'][num]['restaurant']['name'] + "--- location: " + restData['best_rated_restaurant'][num]['restaurant']['location']['address'])
     	return end-start, timeOfRequest, listOfRest
+
     def queryNearbyAirports(self, lat, lon):
     	URL = "http://aviation-edge.com/v2/public/nearby?key=" + AVIATION_API_KEY + "&lat=" + str(lat) + "&lng=" + str(lon) + "&distance=50"
     	start = time.time()
