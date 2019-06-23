@@ -8,10 +8,7 @@ Created on Mon Jun  3 23:54:00 2019
 import tornado.ioloop
 import tornado.web
 import requests
-from pprint import pprint
 import time
-
-from typing import Any, Union
 
 WEATHER_API_KEY = "119f4ed0b5ca20d098497b54a430a6c3"
 
@@ -55,7 +52,6 @@ def query_weather_data(city_name):
     end = time.time()
     time_of_request = r.headers['Date']
     data = r.json()
-    pprint(data)
     weather_data = data['main']
     weather_city_id = data['id']
     humidity, pressure, tempInFar, temp_max, temp_min = weather_data['humidity'], weather_data['pressure'], k2f(
@@ -83,7 +79,7 @@ def query_nearby_airports(lat, lon):
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render('mainPage.html')
+        self.render('mainPage.html', error_message = "")
 
     def post(self):
         message = self.get_body_argument("weather_city")
@@ -103,7 +99,8 @@ class MainHandler(tornado.web.RequestHandler):
                         airport_response_time=airport_response_time, airport_request_time=airport_request_time,
                         listOfAirports=list_of_airports)
         except:
-            self.write('\"' + message + '\" is not a valid City.  Please Reload the page and try again')
+            error_message = '\"' + message + '\" is not a valid City.  Please try again'
+            self.render('mainPage.html', error_message=error_message)
 
 
 def make_app():
