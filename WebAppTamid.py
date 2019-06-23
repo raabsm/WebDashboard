@@ -65,7 +65,7 @@ def query_weather_data(city_name):
     return end - start, time_of_request, weather_city_id, tempInFar, temp_max, temp_min, humidity, pressure, latitude, longitude
 
 
-def query_nearby_airports(self, lat, lon):
+def query_nearby_airports(lat, lon):
     url = "http://aviation-edge.com/v2/public/nearby?key=" + AVIATION_API_KEY + "&lat=" + str(lat) + "&lng=" + str(
         lon) + "&distance=50"
     start = time.time()
@@ -91,7 +91,7 @@ class MainHandler(tornado.web.RequestHandler):
             weather_response_time, weather_request_time, weather_city_id, temp_in_far, temp_max, temp_min, humidity, pressure, latitude, longitude = query_weather_data(
                 message)
             rest_response_time, rest_request_time, rest_list = query_restaurant_data(latitude, longitude, message)
-            airport_response_time, airport_request_time, list_of_airports = self.query_nearby_airports(latitude,
+            airport_response_time, airport_request_time, list_of_airports = query_nearby_airports(latitude,
                                                                                                        longitude)
             self.render("weatherPage.html",
                         city_name=message,
