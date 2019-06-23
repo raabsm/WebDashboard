@@ -97,7 +97,7 @@ class MainHandler(tornado.web.RequestHandler):
                         weather_city_id=weather_city_id,
                         items=rest_list,
                         airport_response_time=airport_response_time, airport_request_time=airport_request_time,
-                        listOfAirports=list_of_airports)
+                        list_of_airports=list_of_airports)
         except:
             error_message = '\"' + message + '\" is not a valid City.  Please try again'
             self.render('mainPage.html', error_message=error_message)

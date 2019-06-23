@@ -28,7 +28,7 @@
 	<h2>Airports near/in {{city_name}}</h2>
 	<h4>API Response Time: {{airport_response_time}}</h4>
 	<h4>API Request Time: {{airport_request_time}}</h4>
-	<p>{% for airport in listOfAirports %}
+	<p>{% for airport in list_of_airports %}
 		<li>{{ airport }}</li>
 		{% end %}
 	</p>
