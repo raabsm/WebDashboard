@@ -9,6 +9,11 @@ import tornado.ioloop
 import tornado.web
 import requests
 import time
+import logging
+from tornado.log import enable_pretty_logging
+
+
+
 
 WEATHER_API_KEY = "119f4ed0b5ca20d098497b54a430a6c3"
 
@@ -80,6 +85,10 @@ def query_nearby_airports(lat, lon):
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('mainPage.html', error_message = "")
+        handler = logging.FileHandler("logFile.txt")
+        access_log = logging.getLogger("tornado.access")
+        enable_pretty_logging()
+        access_log.addHandler(handler)
 
     def post(self):
         message = self.get_body_argument("weather_city")
