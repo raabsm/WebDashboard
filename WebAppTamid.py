@@ -12,9 +12,6 @@ import time
 import logging
 from tornado.log import enable_pretty_logging
 
-
-
-
 WEATHER_API_KEY = "119f4ed0b5ca20d098497b54a430a6c3"
 
 ZOMATO_API_KEY = "109136773c4244bb66745f4db5d67320"
@@ -46,14 +43,15 @@ def query_restaurant_data(lat, lon, city):
     num_restaurants = len(rest_data['best_rated_restaurant'])
     list_of_rest = []
     for num in range(0, num_restaurants):
-        list_of_rest.append(rest_data['best_rated_restaurant'][num]['restaurant']['name'] + "--- location: " +
-                          rest_data['best_rated_restaurant'][num]['restaurant']['location']['address'])
+        list_of_rest.append(rest_data['best_rated_restaurant'][num]['restaurant']['name'] + "--- location: "
+                            + rest_data['best_rated_restaurant'][num]['restaurant']['location']['address'])
     return end - start, time_of_request, list_of_rest
 
 
 def query_weather_data(city_name):
     start = time.time()
-    response = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + city_name + "&appid=" + WEATHER_API_KEY)
+    response = requests.get(
+        "https://api.openweathermap.org/data/2.5/weather?q=" + city_name + "&appid=" + WEATHER_API_KEY)
     end = time.time()
     time_of_request = response.headers['Date']
     data = response.json()
@@ -65,11 +63,12 @@ def query_weather_data(city_name):
     else:
         weather_data = data['main']
         weather_city_id = data['id']
-        humidity, pressure, tempInFar, temp_max, temp_min = weather_data['humidity'], weather_data['pressure'], k2f(
-            weather_data['temp']), k2f(weather_data['temp_max']), k2f(weather_data['temp_min'])
+        humidity, pressure, temp_in_far, temp_max, temp_min = \
+            weather_data['humidity'], weather_data['pressure'], k2f(weather_data['temp']), \
+            k2f(weather_data['temp_max']), k2f(weather_data['temp_min'])
         latitude = data['coord']['lat']
         longitude = data['coord']['lon']
-        return end - start, time_of_request, weather_city_id, tempInFar, temp_max, temp_min, humidity, pressure, latitude, longitude
+        return end - start, time_of_request, weather_city_id, temp_in_far, temp_max, temp_min, humidity, pressure, latitude, longitude
 
 
 def query_nearby_airports(lat, lon):
@@ -83,8 +82,9 @@ def query_nearby_airports(lat, lon):
     list_of_airports = []
     for airport in airport_data:
         list_of_airports.append(
-            "Name of airport: " + airport['nameAirport'] + " Code: " + airport['codeIataAirport'] + " City: " +
-            airport['codeIataCity'])
+                                "Name of airport: " + airport['nameAirport'] + " Code: "
+                                + airport['codeIataAirport'] + " City: "
+                                + airport['codeIataCity'])
     return end - start, time_of_request, list_of_airports
 
 
@@ -94,7 +94,7 @@ class MainHandler(tornado.web.RequestHandler):
         access_log = logging.getLogger("tornado.access")
         enable_pretty_logging()
         access_log.addHandler(handler)
-        self.render('mainPage.html', error_message = "")
+        self.render('mainPage.html', error_message="")
 
     def post(self):
         user_input = self.get_body_argument("weather_city")
@@ -109,7 +109,8 @@ class MainHandler(tornado.web.RequestHandler):
                         city_name=user_input,
                         weather_response_time=weather_response_time, weather_request_time=weather_request_time,
                         rest_response_time=rest_response_time, rest_request_time=rest_request_time,
-                        cur_temp=temp_in_far, max_temp=temp_max, min_temp=temp_min, pressure=pressure, humidity=humidity,
+                        cur_temp=temp_in_far, max_temp=temp_max, min_temp=temp_min, pressure=pressure,
+                        humidity=humidity,
                         weather_city_id=weather_city_id,
                         items=rest_list,
                         airport_response_time=airport_response_time, airport_request_time=airport_request_time,
