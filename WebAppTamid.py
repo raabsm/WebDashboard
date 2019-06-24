@@ -57,6 +57,8 @@ def query_restaurant_data(lat, lon, city):
     for num in range(0, num_restaurants):
         list_of_rest.append(rest_data['best_rated_restaurant'][num]['restaurant']['name'] + "--- location: "
                             + rest_data['best_rated_restaurant'][num]['restaurant']['location']['address'])
+    api_logger.info("ZOMATO API:\n\trequest time: " + str(time_of_request)
+                    + "\n\tresponse time: " + str(round(end - start, 4)) + " seconds")
     return end - start, time_of_request, list_of_rest
 
 
@@ -67,7 +69,7 @@ def query_weather_data(city_name):
     end = time.time()
     time_of_request = response.headers['Date']
     data = response.json()
-    if data['cod'] != '200':
+    if data['cod'] != '200' and data['cod'] != 200:
         api_logger.error("unable to query weather due to \"" + data['message'] + "\"")
         raise Exception(data['message'])
     else:
@@ -78,6 +80,8 @@ def query_weather_data(city_name):
             k2f(weather_data['temp_max']), k2f(weather_data['temp_min'])
         latitude = data['coord']['lat']
         longitude = data['coord']['lon']
+        api_logger.info("OPENWEATHERMAP API:\n\trequest time: " + str(time_of_request)
+                        + "\n\tresponse time: " + str(round(end-start, 4)) + " seconds")
         return end - start, time_of_request, weather_city_id, temp_in_far, temp_max, temp_min, humidity, pressure, latitude, longitude
 
 
@@ -95,6 +99,8 @@ def query_nearby_airports(lat, lon):
             "Name of airport: " + airport['nameAirport'] + " Code: "
             + airport['codeIataAirport'] + " City: "
             + airport['codeIataCity'])
+    api_logger.info("AIRPORTS API:\n\trequest time: " + str(time_of_request)
+                    + "\n\tresponse time: " + str(round(end - start, 4)) + " seconds")
     return end - start, time_of_request, list_of_airports
 
 
@@ -122,12 +128,12 @@ class MainHandler(tornado.web.RequestHandler):
                         airport_response_time=airport_response_time, airport_request_time=airport_request_time,
                         list_of_airports=list_of_airports)
         except Exception as e:
-            error_message = ""
             if str(e) == 'city not found':
                 error_message = '\"' + user_input + '\" is not a valid City.  Please try again'
+                self.render('mainPage.html', error_message=error_message)
             else:
-                error_message = e
-            self.render('mainPage.html', error_message=error_message)
+                self.write("exception has been thrown: " + e)
+
 
 
 def make_app():
