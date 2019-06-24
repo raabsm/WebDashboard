@@ -16,7 +16,19 @@ WEATHER_API_KEY = "119f4ed0b5ca20d098497b54a430a6c3"
 
 ZOMATO_API_KEY = "109136773c4244bb66745f4db5d67320"
 
-AVIATION_API_KEY = "b918d5-5ab06e"  # only has 90 calls remaining!!!
+AVIATION_API_KEY = "b918d5-5ab06e"  # only has 50 calls remaining!!!
+
+api_logger = logging.getLogger(__name__)
+access_log = logging.getLogger("tornado.access")
+
+
+def config_log_info():
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler = logging.FileHandler("logFile.txt")
+    handler.setFormatter(formatter)
+    api_logger.addHandler(handler)
+    access_log.addHandler(handler)
+    enable_pretty_logging()
 
 
 def k2f(k):
@@ -55,10 +67,8 @@ def query_weather_data(city_name):
     end = time.time()
     time_of_request = response.headers['Date']
     data = response.json()
-    print(data)
     if data['cod'] != '200':
-        print("ran error handler")
-        logging.error("unable to query weather due to \"" + data['message'] + "\"")
+        api_logger.error("unable to query weather due to \"" + data['message'] + "\"")
         raise Exception(data['message'])
     else:
         weather_data = data['main']
@@ -82,18 +92,14 @@ def query_nearby_airports(lat, lon):
     list_of_airports = []
     for airport in airport_data:
         list_of_airports.append(
-                                "Name of airport: " + airport['nameAirport'] + " Code: "
-                                + airport['codeIataAirport'] + " City: "
-                                + airport['codeIataCity'])
+            "Name of airport: " + airport['nameAirport'] + " Code: "
+            + airport['codeIataAirport'] + " City: "
+            + airport['codeIataCity'])
     return end - start, time_of_request, list_of_airports
 
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        handler = logging.FileHandler("logFile.txt")
-        access_log = logging.getLogger("tornado.access")
-        enable_pretty_logging()
-        access_log.addHandler(handler)
         self.render('mainPage.html', error_message="")
 
     def post(self):
@@ -131,6 +137,7 @@ def make_app():
 
 
 if __name__ == "__main__":
+    config_log_info()
     app = make_app()
     app.listen(8888)
     tornado.ioloop.IOLoop.current().start()
