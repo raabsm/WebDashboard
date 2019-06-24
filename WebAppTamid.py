@@ -106,7 +106,7 @@ class MainHandler(tornado.web.RequestHandler):
             airport_response_time, airport_request_time, list_of_airports \
                 = query_nearby_airports(latitude, longitude)
             self.render("weatherPage.html",
-                        city_name=message,
+                        city_name=user_input,
                         weather_response_time=weather_response_time, weather_request_time=weather_request_time,
                         rest_response_time=rest_response_time, rest_request_time=rest_request_time,
                         cur_temp=temp_in_far, max_temp=temp_max, min_temp=temp_min, pressure=pressure, humidity=humidity,
