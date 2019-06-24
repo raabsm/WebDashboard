@@ -53,17 +53,23 @@ def query_restaurant_data(lat, lon, city):
 
 def query_weather_data(city_name):
     start = time.time()
-    r = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + city_name + "&appid=" + WEATHER_API_KEY)
+    response = requests.get("https://api.openweathermap.org/data/2.5/weather?q=" + city_name + "&appid=" + WEATHER_API_KEY)
     end = time.time()
-    time_of_request = r.headers['Date']
-    data = r.json()
-    weather_data = data['main']
-    weather_city_id = data['id']
-    humidity, pressure, tempInFar, temp_max, temp_min = weather_data['humidity'], weather_data['pressure'], k2f(
-        weather_data['temp']), k2f(weather_data['temp_max']), k2f(weather_data['temp_min'])
-    latitude = data['coord']['lat']
-    longitude = data['coord']['lon']
-    return end - start, time_of_request, weather_city_id, tempInFar, temp_max, temp_min, humidity, pressure, latitude, longitude
+    time_of_request = response.headers['Date']
+    data = response.json()
+    print(data)
+    if data['cod'] != '200':
+        print("ran error handler")
+        logging.error("unable to query weather due to \"" + data['message'] + "\"")
+        raise Exception(data['message'])
+    else:
+        weather_data = data['main']
+        weather_city_id = data['id']
+        humidity, pressure, tempInFar, temp_max, temp_min = weather_data['humidity'], weather_data['pressure'], k2f(
+            weather_data['temp']), k2f(weather_data['temp_max']), k2f(weather_data['temp_min'])
+        latitude = data['coord']['lat']
+        longitude = data['coord']['lon']
+        return end - start, time_of_request, weather_city_id, tempInFar, temp_max, temp_min, humidity, pressure, latitude, longitude
 
 
 def query_nearby_airports(lat, lon):
@@ -84,11 +90,11 @@ def query_nearby_airports(lat, lon):
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render('mainPage.html', error_message = "")
         handler = logging.FileHandler("logFile.txt")
         access_log = logging.getLogger("tornado.access")
         enable_pretty_logging()
         access_log.addHandler(handler)
+        self.render('mainPage.html', error_message = "")
 
     def post(self):
         message = self.get_body_argument("weather_city")
@@ -107,8 +113,12 @@ class MainHandler(tornado.web.RequestHandler):
                         items=rest_list,
                         airport_response_time=airport_response_time, airport_request_time=airport_request_time,
                         list_of_airports=list_of_airports)
-        except:
-            error_message = '\"' + message + '\" is not a valid City.  Please try again'
+        except Exception as e:
+            error_message = ""
+            if str(e) == 'city not found':
+                error_message = '\"' + message + '\" is not a valid City.  Please try again'
+            else:
+                error_message = e
             self.render('mainPage.html', error_message=error_message)
 
 
