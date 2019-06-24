@@ -97,13 +97,14 @@ class MainHandler(tornado.web.RequestHandler):
         self.render('mainPage.html', error_message = "")
 
     def post(self):
-        message = self.get_body_argument("weather_city")
+        user_input = self.get_body_argument("weather_city")
         try:
-            weather_response_time, weather_request_time, weather_city_id, temp_in_far, temp_max, temp_min, humidity, pressure, latitude, longitude = query_weather_data(
-                message)
-            rest_response_time, rest_request_time, rest_list = query_restaurant_data(latitude, longitude, message)
-            airport_response_time, airport_request_time, list_of_airports = query_nearby_airports(latitude,
-                                                                                                       longitude)
+            weather_response_time, weather_request_time, weather_city_id, temp_in_far, temp_max, temp_min, humidity, pressure, latitude, longitude \
+                = query_weather_data(user_input)
+            rest_response_time, rest_request_time, rest_list \
+                = query_restaurant_data(latitude, longitude, user_input)
+            airport_response_time, airport_request_time, list_of_airports \
+                = query_nearby_airports(latitude, longitude)
             self.render("weatherPage.html",
                         city_name=message,
                         weather_response_time=weather_response_time, weather_request_time=weather_request_time,
@@ -116,7 +117,7 @@ class MainHandler(tornado.web.RequestHandler):
         except Exception as e:
             error_message = ""
             if str(e) == 'city not found':
-                error_message = '\"' + message + '\" is not a valid City.  Please try again'
+                error_message = '\"' + user_input + '\" is not a valid City.  Please try again'
             else:
                 error_message = e
             self.render('mainPage.html', error_message=error_message)
