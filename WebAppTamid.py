@@ -81,7 +81,7 @@ def query_weather_data(city_name):
         latitude = data['coord']['lat']
         longitude = data['coord']['lon']
         api_logger.info("OPENWEATHERMAP API:\n\trequest time: " + str(time_of_request)
-                        + "\n\tresponse time: " + str(round(end-start, 4)) + " seconds")
+                        + "\n\tresponse time: " + str(round(end - start, 4)) + " seconds")
         return end - start, time_of_request, weather_city_id, temp_in_far, temp_max, temp_min, humidity, pressure, latitude, longitude
 
 
@@ -132,8 +132,7 @@ class MainHandler(tornado.web.RequestHandler):
                 error_message = '\"' + user_input + '\" is not a valid City.  Please try again'
                 self.render('mainPage.html', error_message=error_message)
             else:
-                self.write("exception has been thrown: " + e)
-
+                self.write("exception has been thrown: " + str(e))
 
 
 def make_app():
