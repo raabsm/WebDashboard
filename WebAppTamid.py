@@ -45,7 +45,7 @@ def query_restaurant_data(lat, lon, city):
         response = requests.get(location_url_from_lat_long, headers=header)
         rest_data = response.json()
         if len(rest_data['location_suggestions']) == 0:
-            raise Exception("Restaurant API No Cities Found")
+            raise InvalidCityError("Restaurant API No Cities Found")
         entity_type = rest_data['location_suggestions'][0]['entity_type']
         city_id = rest_data['location_suggestions'][0]['city_id']
         restaurant_url = "https://developers.zomato.com/api/v2.1/location_details?entity_id=" + str(
@@ -82,7 +82,7 @@ def query_weather_data(city_name):
         except requests.exceptions.HTTPError as err:
             data = response.json()
             if data['message'] == 'city not found':
-                raise InvalidCityError()
+                raise InvalidCityError("Weather API City Not Found")
             else:
                 raise Exception("Weather API HTTPError: " + str(err))
     except requests.exceptions.RequestException as e:
@@ -150,8 +150,8 @@ class MainHandler(tornado.web.RequestHandler):
                         items=rest_list,
                         airport_response_time=airport_response_time, airport_request_time=airport_request_time,
                         list_of_airports=list_of_airports)
-        except InvalidCityError:
-            api_logger.error("Unable to query Weather due to City Not Found")
+        except InvalidCityError as err:
+            api_logger.error(str(err))
             error_message = '\"' + user_input + '\" is not a valid City.  Please try again'
             self.render('mainPage.html', error_message=error_message)
         except Exception as e:
