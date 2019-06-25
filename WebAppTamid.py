@@ -38,18 +38,27 @@ def k2f(k):
 
 
 def query_restaurant_data(lat, lon, city):
-    location_url_from_lat_long = "https://developers.zomato.com/api/v2.1/locations?query=" + city + "&lat=" + str(
-        lat) + "&lon=" + str(lon)
-    header = {"User-agent": "curl/7.43.0", "Accept": "application/json", "user_key": ZOMATO_API_KEY}
-    response = requests.get(location_url_from_lat_long, headers=header)
-    rest_data = response.json()
-    entity_type = rest_data['location_suggestions'][0]['entity_type']
-    city_id = rest_data['location_suggestions'][0]['city_id']
-    restaurant_url = "https://developers.zomato.com/api/v2.1/location_details?entity_id=" + str(
-        city_id) + "&entity_type=" + entity_type
-    start = time.time()
-    response = requests.get(restaurant_url, headers=header)
-    end = time.time()
+    try:
+        location_url_from_lat_long = "https://developers.zomato.com/api/v2.1/locations?query=" + city + "&lat=" + str(
+            lat) + "&lon=" + str(lon)
+        header = {"User-agent": "curl/7.43.0", "Accept": "application/json", "user_key": ZOMATO_API_KEY}
+        response = requests.get(location_url_from_lat_long, headers=header)
+        rest_data = response.json()
+        if len(rest_data['location_suggestions']) == 0:
+            raise Exception("Restaurant API No Cities Found")
+        entity_type = rest_data['location_suggestions'][0]['entity_type']
+        city_id = rest_data['location_suggestions'][0]['city_id']
+        restaurant_url = "https://developers.zomato.com/api/v2.1/location_details?entity_id=" + str(
+            city_id) + "&entity_type=" + entity_type
+        start = time.time()
+        response = requests.get(restaurant_url, headers=header)
+        end = time.time()
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            raise Exception("Restaurant API HTTPError: " + str(err))
+    except requests.exceptions.RequestException as e:
+        raise Exception("Restaurant API exception: " + str(e))
     time_of_request = response.headers['Date']
     rest_data = response.json()
     num_restaurants = len(rest_data['best_rated_restaurant'])
@@ -93,11 +102,18 @@ def query_weather_data(city_name):
 
 
 def query_nearby_airports(lat, lon):
-    url = "http://aviation-edge.com/v2/public/nearby?key=" + AVIATION_API_KEY + "&lat=" + str(lat) + "&lng=" + str(
-        lon) + "&distance=50"
-    start = time.time()
-    response = requests.get(url)
-    end = time.time()
+    try:
+        url = "http://aviation-edge.com/v2/public/nearby?key=" + AVIATION_API_KEY + "&lat=" + str(lat) + "&lng=" + str(
+            lon) + "&distance=50"
+        start = time.time()
+        response = requests.get(url)
+        end = time.time()
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            raise Exception("Airport API HTTPError: " + str(err))
+    except requests.exceptions.RequestException as e:
+        raise Exception("Airport API exception: " + str(e))
     time_of_request = response.headers['Date']
     airport_data = response.json()
     list_of_airports = []
@@ -134,7 +150,7 @@ class MainHandler(tornado.web.RequestHandler):
                         items=rest_list,
                         airport_response_time=airport_response_time, airport_request_time=airport_request_time,
                         list_of_airports=list_of_airports)
-        except InvalidCityError as error:
+        except InvalidCityError:
             api_logger.error("Unable to query Weather due to City Not Found")
             error_message = '\"' + user_input + '\" is not a valid City.  Please try again'
             self.render('mainPage.html', error_message=error_message)
