@@ -140,7 +140,7 @@ class MainHandler(tornado.web.RequestHandler):
                 = query_restaurant_data(latitude, longitude, user_input)
             airport_response_time, airport_request_time, list_of_airports \
                 = query_nearby_airports(latitude, longitude)
-            self.render("weatherPage.html",
+            self.render("dashboard.html",
                         city_name=user_input,
                         weather_response_time=weather_response_time, weather_request_time=weather_request_time,
                         rest_response_time=rest_response_time, rest_request_time=rest_request_time,

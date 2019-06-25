@@ -28,3 +28,14 @@
 2019-06-24 13:40:11,562 - tornado.access - INFO - 200 GET / (::1) 0.66ms
 2019-06-24 13:40:14,578 - __main__ - ERROR - unable to query weather due to "city not found"
 2019-06-24 13:40:14,579 - tornado.access - INFO - 200 POST / (::1) 395.13ms
+2019-06-25 17:50:50,101 - tornado.access - INFO - 200 GET / (::1) 1.81ms
+2019-06-25 17:50:52,658 - __main__ - INFO - OPENWEATHERMAP API:
+	request time: Tue, 25 Jun 2019 14:50:52 GMT
+	response time: 0.5316 seconds
+2019-06-25 17:50:54,711 - __main__ - INFO - ZOMATO API:
+	request time: Tue, 25 Jun 2019 14:50:54 GMT
+	response time: 1.2295 seconds
+2019-06-25 17:50:55,372 - __main__ - INFO - AIRPORTS API:
+	request time: Tue, 25 Jun 2019 14:50:54 GMT
+	response time: 0.6604 seconds
+2019-06-25 17:50:55,375 - tornado.access - INFO - 200 POST / (::1) 3249.03ms
