@@ -63,26 +63,33 @@ def query_restaurant_data(lat, lon, city):
 
 
 def query_weather_data(city_name):
-    start = time.time()
-    response = requests.get(
-        "https://api.openweathermap.org/data/2.5/weather?q=" + city_name + "&appid=" + WEATHER_API_KEY)
-    end = time.time()
+    try:
+        start = time.time()
+        response = requests.get(
+            "https://api.openweathermap.org/data/2.5/weather?q=" + city_name + "&appid=" + WEATHER_API_KEY)
+        end = time.time()
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as err:
+            data = response.json()
+            if data['message'] == 'city not found':
+                raise InvalidCityError()
+            else:
+                raise Exception("Weather API HTTPError: " + str(err))
+    except requests.exceptions.RequestException as e:
+        raise Exception("Weather API exception: " + str(e))
     time_of_request = response.headers['Date']
     data = response.json()
-    if data['cod'] != '200' and data['cod'] != 200:
-        api_logger.error("unable to query weather due to \"" + data['message'] + "\"")
-        raise Exception(data['message'])
-    else:
-        weather_data = data['main']
-        weather_city_id = data['id']
-        humidity, pressure, temp_in_far, temp_max, temp_min = \
-            weather_data['humidity'], weather_data['pressure'], k2f(weather_data['temp']), \
-            k2f(weather_data['temp_max']), k2f(weather_data['temp_min'])
-        latitude = data['coord']['lat']
-        longitude = data['coord']['lon']
-        api_logger.info("OPENWEATHERMAP API:\n\trequest time: " + str(time_of_request)
-                        + "\n\tresponse time: " + str(round(end - start, 4)) + " seconds")
-        return end - start, time_of_request, weather_city_id, temp_in_far, temp_max, temp_min, humidity, pressure, latitude, longitude
+    weather_data = data['main']
+    weather_city_id = data['id']
+    humidity, pressure, temp_in_far, temp_max, temp_min = \
+        weather_data['humidity'], weather_data['pressure'], k2f(weather_data['temp']), \
+        k2f(weather_data['temp_max']), k2f(weather_data['temp_min'])
+    latitude = data['coord']['lat']
+    longitude = data['coord']['lon']
+    api_logger.info("OPENWEATHERMAP API:\n\trequest time: " + str(time_of_request)
+                    + "\n\tresponse time: " + str(round(end - start, 4)) + " seconds")
+    return end - start, time_of_request, weather_city_id, temp_in_far, temp_max, temp_min, humidity, pressure, latitude, longitude
 
 
 def query_nearby_airports(lat, lon):
@@ -127,12 +134,17 @@ class MainHandler(tornado.web.RequestHandler):
                         items=rest_list,
                         airport_response_time=airport_response_time, airport_request_time=airport_request_time,
                         list_of_airports=list_of_airports)
+        except InvalidCityError as error:
+            api_logger.error("Unable to query Weather due to City Not Found")
+            error_message = '\"' + user_input + '\" is not a valid City.  Please try again'
+            self.render('mainPage.html', error_message=error_message)
         except Exception as e:
-            if str(e) == 'city not found':
-                error_message = '\"' + user_input + '\" is not a valid City.  Please try again'
-                self.render('mainPage.html', error_message=error_message)
-            else:
-                self.write("exception has been thrown: " + str(e))
+            api_logger.error(str(e))
+            self.write("Exception has been thrown: " + str(e))
+
+
+class InvalidCityError(Exception):
+    pass
 
 
 def make_app():
