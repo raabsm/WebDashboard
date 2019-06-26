@@ -8,4 +8,6 @@ collection = database['mycol_01']
 
 data = {'Name': "Sam"}
 
-collection.insert_one(data)
+document = collection.insert_one(data)
+
+print(document.inserted_id)
