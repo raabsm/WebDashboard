@@ -34,6 +34,7 @@ document_template = {'GET_request_date': None,
                      'GET_request_time': None,
                      'ip_address': None,
                      'user_input': None,
+                     'error': None,
                      'weather_api': {
                          'error': None,
                          'request_time': None,
@@ -93,9 +94,9 @@ def query_restaurant_data(lat, lon, city):
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
-            raise Exception("Restaurant API HTTPError: " + str(err))
+            raise Exception("Restaurant|HTTPError: " + str(err))
     except requests.exceptions.RequestException as e:
-        raise Exception("Restaurant API exception: " + str(e))
+        raise Exception("Restaurant|exception: " + str(e))
     time_of_request = response.headers['Date']
     rest_data = response.json()
     num_restaurants = len(rest_data['best_rated_restaurant'])
@@ -121,9 +122,9 @@ def query_weather_data(city_name):
             if data['message'] == 'city not found':
                 raise InvalidCityError("Weather")
             else:
-                raise Exception("Weather API HTTPError: " + str(err))
+                raise Exception("Weather|HTTPError: " + str(err))
     except requests.exceptions.RequestException as e:
-        raise Exception("Weather API exception: " + str(e))
+        raise Exception("Weather|exception: " + str(e))
     time_of_request = response.headers['Date']
     data = response.json()
     weather_data = data['main']
@@ -148,9 +149,9 @@ def query_nearby_airports(lat, lon):
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError as err:
-            raise Exception("Airport API HTTPError: " + str(err))
+            raise Exception("Airport|HTTPError: " + str(err))
     except requests.exceptions.RequestException as e:
-        raise Exception("Airport API exception: " + str(e))
+        raise Exception("Airport|exception: " + str(e))
     time_of_request = response.headers['Date']
     airport_data = response.json()
     list_of_airports = []
@@ -198,11 +199,26 @@ class MainHandler(tornado.web.RequestHandler):
                 log_document['weather_api']['error'] = "Invalid City"
             elif api_that_caused_error == "Restaurant":
                 log_document['restaurant_api']['error'] = "Invalid City"
+            log_document['error'] = "Invalid City"
             api_logger.error(api_that_caused_error + " API Invalid City")
             error_message = '\"' + user_input + '\" is not a valid City.  Please try again.'
             self.render('mainPage.html', error_message=error_message)
         except Exception as e:
-            api_logger.error(str(e))
+            index = e.find("|")
+            error_message = ""
+            if index == -1:
+                error_message = "Non-API error: " + str(e)
+            else:
+                api_that_caused_error =str(e)[:index]
+                error_message = api_that_caused_error + "API Error: " + str(e)[index:]
+                if api_that_caused_error == "restaurant":
+                    log_document['restaurant_api']['error'] = error_message
+                elif api_that_caused_error == "weather":
+                    log_document['weather_api']['error'] = error_message
+                else:
+                    log_document['airport_api']['error'] = error_message
+            log_document['error'] = error_message
+            api_logger.error(error_message)
             self.write("Exception has been thrown: " + str(e))
 
 
