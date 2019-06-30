@@ -30,22 +30,22 @@ connection = pymongo.MongoClient('localhost', 27017)
 database = connection['myDatabase']
 collection = database['ServerActivity']
 server_info = []
-document_template = {'get_request_date': None,
-                     'request_time': None,
+document_template = {'GET_request_date': None,
+                     'GET_request_time': None,
                      'ip_address': None,
                      'user_input': None,
                      'weather_api': {
-                         'status': False,
+                         'error': None,
                          'request_time': None,
                          'response_time': None
                      },
                      'restaurant_api': {
-                         'status': False,
+                         'error': None,
                          'request_time': None,
                          'response_time': None
                      },
                      'airport_api': {
-                         'status': False,
+                         'error': None,
                          'request_time': None,
                          'response_time': None
                      },
@@ -82,7 +82,7 @@ def query_restaurant_data(lat, lon, city):
         response = requests.get(location_url_from_lat_long, headers=header)
         rest_data = response.json()
         if len(rest_data['location_suggestions']) == 0:
-            raise InvalidCityError("Restaurant API No Cities Found")
+            raise InvalidCityError("Restaurant")
         entity_type = rest_data['location_suggestions'][0]['entity_type']
         city_id = rest_data['location_suggestions'][0]['city_id']
         restaurant_url = "https://developers.zomato.com/api/v2.1/location_details?entity_id=" + str(
@@ -119,7 +119,7 @@ def query_weather_data(city_name):
         except requests.exceptions.HTTPError as err:
             data = response.json()
             if data['message'] == 'city not found':
-                raise InvalidCityError("Weather API City Not Found")
+                raise InvalidCityError("Weather")
             else:
                 raise Exception("Weather API HTTPError: " + str(err))
     except requests.exceptions.RequestException as e:
@@ -167,12 +167,13 @@ def query_nearby_airports(lat, lon):
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render('mainPage.html', error_message="")
-        # add_info_to_document({"get_request_date": datetime.datetime.now(),
-        #                       "request_time":     self.request.request_time(),
-        #                       "remote_ip":        self.request.remote_ip})
+        log_document['GET_request_date'] = datetime.datetime.now()
+        log_document['GET_response_time'] = self.request.request_time()
+        log_document['remote_ip'] = self.request.remote_ip
 
     def post(self):
         user_input = self.get_body_argument("weather_city")
+        log_document['user_input'] = user_input
         try:
             weather_response_time, weather_request_time, weather_city_id, temp_in_far, temp_max, temp_min, humidity, pressure, latitude, longitude \
                 = query_weather_data(user_input)
@@ -192,8 +193,13 @@ class MainHandler(tornado.web.RequestHandler):
                         list_of_airports=list_of_airports)
             print("post", self.request.request_time())
         except InvalidCityError as err:
-            api_logger.error(str(err))
-            error_message = '\"' + user_input + '\" is not a valid City.  Please try again'
+            api_that_caused_error = str(err)
+            if api_that_caused_error == "Weather":
+                log_document['weather_api']['error'] = "Invalid City"
+            elif api_that_caused_error == "Restaurant":
+                log_document['restaurant_api']['error'] = "Invalid City"
+            api_logger.error(api_that_caused_error + " API Invalid City")
+            error_message = '\"' + user_input + '\" is not a valid City.  Please try again.'
             self.render('mainPage.html', error_message=error_message)
         except Exception as e:
             api_logger.error(str(e))
