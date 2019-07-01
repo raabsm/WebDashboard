@@ -14,6 +14,7 @@ import logging
 import tornado.escape
 from tornado.log import enable_pretty_logging
 import pymongo
+import copy
 from bson import ObjectId
 
 WEATHER_API_KEY = "119f4ed0b5ca20d098497b54a430a6c3"
@@ -29,9 +30,10 @@ access_log = logging.getLogger("tornado.access")
 connection = pymongo.MongoClient('localhost', 27017)
 database = connection['myDatabase']
 collection = database['ServerActivity']
-server_info = []
+inserted_document = collection.insert_one({'logs': []})
+doc_id = inserted_document.inserted_id
 document_template = {'GET_request_date': None,
-                     'GET_request_time': None,
+                     'GET_response_time': None,
                      'ip_address': None,
                      'user_input': None,
                      'error': None,
@@ -50,14 +52,20 @@ document_template = {'GET_request_date': None,
                          'request_time': None,
                          'response_time': None
                      },
-                     'post_request_time': None
+                     'POST_response_time': None
                      }
-log_document = document_template.copy()
+log_document = copy.deepcopy(document_template)
 
 
-def add_log_to_db(dictionary):
-    server_info.extend(dictionary)
-    log_document = document_template.copy()
+def reset_document():
+    global log_document
+    log_document = copy.deepcopy(document_template)
+
+
+def add_log_to_db():
+    global doc_id
+    print(log_document)
+    collection.update_one({'_id': doc_id}, {"$push": {'logs': log_document}})
 
 
 def config_log_info():
@@ -106,6 +114,8 @@ def query_restaurant_data(lat, lon, city):
                             + rest_data['best_rated_restaurant'][num]['restaurant']['location']['address'])
     api_logger.info("ZOMATO API:\n\trequest time: " + str(time_of_request)
                     + "\n\tresponse time: " + str(round(end - start, 4)) + " seconds")
+    log_document['restaurant_api']['request_time'] = time_of_request
+    log_document['restaurant_api']['response_time'] = round(end - start, 4)
     return end - start, time_of_request, list_of_rest
 
 
@@ -136,6 +146,8 @@ def query_weather_data(city_name):
     longitude = data['coord']['lon']
     api_logger.info("OPENWEATHERMAP API:\n\trequest time: " + str(time_of_request)
                     + "\n\tresponse time: " + str(round(end - start, 4)) + " seconds")
+    log_document['weather_api']['request_time'] = time_of_request
+    log_document['weather_api']['response_time'] = round(end - start, 4)
     return end - start, time_of_request, weather_city_id, temp_in_far, temp_max, temp_min, humidity, pressure, latitude, longitude
 
 
@@ -162,17 +174,21 @@ def query_nearby_airports(lat, lon):
             + airport['codeIataCity'])
     api_logger.info("AIRPORTS API:\n\trequest time: " + str(time_of_request)
                     + "\n\tresponse time: " + str(round(end - start, 4)) + " seconds")
+    log_document['airport_api']['request_time'] = time_of_request
+    log_document['airport_api']['response_time'] = round(end - start, 4)
     return end - start, time_of_request, list_of_airports
 
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
+        global log_document
         self.render('mainPage.html', error_message="")
         log_document['GET_request_date'] = datetime.datetime.now()
         log_document['GET_response_time'] = self.request.request_time()
-        log_document['remote_ip'] = self.request.remote_ip
+        log_document['ip_address'] = self.request.remote_ip
 
     def post(self):
+        global log_document
         user_input = self.get_body_argument("weather_city")
         log_document['user_input'] = user_input
         try:
@@ -192,7 +208,7 @@ class MainHandler(tornado.web.RequestHandler):
                         items=rest_list,
                         airport_response_time=airport_response_time, airport_request_time=airport_request_time,
                         list_of_airports=list_of_airports)
-            print("post", self.request.request_time())
+            log_document['POST_response_time'] = self.request.request_time()
         except InvalidCityError as err:
             api_that_caused_error = str(err)
             if api_that_caused_error == "Weather":
@@ -204,7 +220,7 @@ class MainHandler(tornado.web.RequestHandler):
             error_message = '\"' + user_input + '\" is not a valid City.  Please try again.'
             self.render('mainPage.html', error_message=error_message)
         except Exception as e:
-            index = e.find("|")
+            index = str(e).find("|")
             error_message = ""
             if index == -1:
                 error_message = "Non-API error: " + str(e)
@@ -220,6 +236,9 @@ class MainHandler(tornado.web.RequestHandler):
             log_document['error'] = error_message
             api_logger.error(error_message)
             self.write("Exception has been thrown: " + str(e))
+        add_log_to_db()
+        reset_document()
+        print("erased: ", log_document)
 
 
 class InvalidCityError(Exception):
